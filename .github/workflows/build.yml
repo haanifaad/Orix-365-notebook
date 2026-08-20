@@ -1,0 +1,61 @@
+name: Build and Package Notebook
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    strategy:
+      matrix:
+        platform: [x64, Win32]
+        configuration: [Release]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Build Solution
+      run: |
+        msbuild PowerEditor\visual.net\notepadPlus.sln /p:Configuration=${{ matrix.configuration }} /p:Platform=${{ matrix.platform }} /m
+
+    - name: Prepare Portable Package
+      shell: pwsh
+      run: |
+        $binDir = if ("${{ matrix.platform }}" -eq "x64") { "PowerEditor\bin64" } else { "PowerEditor\bin" }
+        
+        # Create output directory for packaging
+        New-Item -ItemType Directory -Force -Path output
+        
+        # Copy and rename the binary to Notebook.exe
+        if (Test-Path "$binDir\Notepad++.exe") {
+            Copy-Item "$binDir\Notepad++.exe" -Destination "output\Notebook.exe"
+            Write-Output "Successfully copied and renamed binary to Notebook.exe"
+        } else {
+            Write-Error "Notepad++.exe was not found in $binDir"
+            exit 1
+        }
+        
+        # Copy standard configs and styling models
+        Copy-Item "PowerEditor\src\langs.model.xml" -Destination "output\"
+        Copy-Item "PowerEditor\src\stylers.model.xml" -Destination "output\"
+        
+        # Generate portable ZIP package
+        Compress-Archive -Path output\* -DestinationPath "Notebook-${{ matrix.platform }}-portable.zip"
+        Write-Output "Successfully created Notebook-${{ matrix.platform }}-portable.zip"
+
+    - name: Upload Build Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: Notebook-${{ matrix.platform }}
+        path: |
+          Notebook-${{ matrix.platform }}-portable.zip
+          output\Notebook.exe
