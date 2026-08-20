@@ -20,12 +20,18 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
+    - name: List files
+      shell: pwsh
+      run: |
+        Get-Location
+        Get-ChildItem -Depth 3
+
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v2
 
     - name: Build Solution
       run: |
-        msbuild PowerEditor\visual.net\notepadPlus.sln /p:Configuration=${{ matrix.configuration }} /p:Platform=${{ matrix.platform }} /m
+        msbuild "PowerEditor/visual.net/notepadPlus.sln" /p:Configuration=${{ matrix.configuration }} /p:Platform=${{ matrix.platform }} /m
 
     - name: Prepare Portable Package
       shell: pwsh
