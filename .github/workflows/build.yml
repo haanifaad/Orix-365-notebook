@@ -33,7 +33,7 @@ jobs:
       shell: cmd
       run: |
         cd PowerEditor\visual.net
-        msbuild notepadPlus.sln /p:Configuration=${{ matrix.configuration }} /p:Platform=${{ matrix.platform }} /m
+        msbuild notepadPlus.sln /p:Configuration=${{ matrix.configuration }} /p:Platform=${{ matrix.platform }} /p:PlatformToolset=v143 /p:WindowsTargetPlatformVersion=10.0 /m
 
     - name: Prepare Portable Package
       shell: pwsh
